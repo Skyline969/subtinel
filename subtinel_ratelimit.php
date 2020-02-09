@@ -72,8 +72,14 @@
 	// Be good and disconnect.
 	curl_close($ch);
 	
-	// Ok, fun part's over. Now we need to get the URL of our last post.
-	$last_url_posted = trim(file_get_contents(dirname(__FILE__) . "/last_post.txt"));
+	// Ok, fun part's over. Now we need to get the timestamp of our last post.
+	if (file_exists(dirname(__FILE__) . "/last_post.txt"))
+		$last_timestamp_posted = intval(trim(file_get_contents(dirname(__FILE__) . "/last_post.txt")));
+	else
+		$last_timestamp_posted = 0;
+	
+	if ($debug)
+		print "Last timestamp: " . $last_timestamp_posted . "\n";
 	
 	// Our array of posts we're actually going to post
 	$posts_to_post = array();
@@ -81,10 +87,10 @@
 	// Loop through the posts until we find the last post
 	foreach($post_ary as $post)
 	{
-		if ($post->permalink == $last_url_posted)
-			break;
-		else
+		if (intval($post->created) > $last_timestamp_posted)
 			$posts_to_post[] = $post;
+		else
+			break;
 	}
 	
 	// Only proceed if there's something to post
@@ -103,9 +109,9 @@
 			{
 				// Generate the payload based on whether or not we should show URL previews
 				if ($show_url_previews)
-					$discord_posts[$post->permalink] = '{"content":' . json_encode($post->author . ": " . $post->title . " [" . date("Y-m-d H:i:s", $post->created / 1000) . "]\n" . $post->permalink) . '}';
+					$discord_posts[] = array("timestamp" => $post->created, "content" => '{"content":' . json_encode($post->author . ": " . $post->title . " [" . date("Y-m-d H:i:s", $post->created / 1000) . "]\n" . $post->permalink) . '}');
 				else
-					$discord_posts[$post->permalink] = '{"content":' . json_encode($post->author . ": " . $post->title . " [" . date("Y-m-d H:i:s", $post->created / 1000) . "]\n<" . $post->permalink . ">") . '}';
+					$discord_posts[] = array("timestamp" => $post->created, "content" => '{"content":' . json_encode($post->author . ": " . $post->title . " [" . date("Y-m-d H:i:s", $post->created / 1000) . "]\n<" . $post->permalink . ">") . '}');
 			}
 		}
 		
@@ -118,26 +124,26 @@
 		curl_setopt($ch, CURLOPT_POST, true);
 		
 		$last_successful_post = "";
-		foreach($discord_posts as $link => $post)
+		foreach($discord_posts as $post)
 		{
 			if ($debug)
-				print $link . ": " . $post . "\n";
+				print $post["timestamp"] . ": " . $post["content"] . "\n";
 			
 			// Set the payload and update the headers
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $post["content"]);
 			curl_setopt($ch, CURLOPT_HTTPHEADER, array(
 				'Content-Type: application/json',
-				'Content-Length: ' . strlen($post))
+				'Content-Length: ' . strlen($post["content"]))
 			);
 			
 			// Go!
 			curl_exec($ch);
 
-			// Store the URL of our last post, but only do so if we successfully posted.
+			// Store the timestamp of our last post, but only do so if we successfully posted.
 			$result = curl_getinfo($ch);
 			if ($result["http_code"] == "204")
 			{
-				$last_successful_post = $link;
+				$last_successful_post = $post["timestamp"];
 				if ($debug)
 					print "Posted OK.\n";
 			}

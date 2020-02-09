@@ -72,19 +72,25 @@
 	// Be good and disconnect.
 	curl_close($ch);
 	
-	// Ok, fun part's over. Now we need to get the URL of our last post.
-	$last_url_posted = trim(file_get_contents(dirname(__FILE__) . "/last_post.txt"));
+	// Ok, fun part's over. Now we need to get the timestamp of our last post.
+	if (file_exists(dirname(__FILE__) . "/last_post.txt"))
+		$last_timestamp_posted = intval(trim(file_get_contents(dirname(__FILE__) . "/last_post.txt")));
+	else
+		$last_timestamp_posted = 0;
+	
+	if ($debug)
+		print "Last timestamp: " . $last_timestamp_posted . "\n";
 	
 	// Our array of posts we're actually going to post
 	$posts_to_post = array();
 	
-	// Loop through the posts until we find the last post
+	// Loop through the posts until we find a post on or before the timestamp of the last post.
 	foreach($post_ary as $post)
 	{
-		if ($post->permalink == $last_url_posted)
-			break;
-		else
+		if (intval($post->created) > $last_timestamp_posted)
 			$posts_to_post[] = $post;
+		else
+			break;
 	}
 	
 	// Only proceed if there's something to post
@@ -111,8 +117,8 @@
 				break;
 			else
 			{
-				// Set the URL of the latest post as that's our new point of reference for updating content.
-				$latest_post_url = $post->permalink;
+				// Set the timestamp of the latest post as that's our new point of reference for updating content.
+				$latest_post_timestamp = $post->created;
 				$post_json .= $tmp_json;
 			}
 		}
@@ -141,7 +147,7 @@
 		$result = curl_getinfo($ch);
 		if ($result["http_code"] == "204")
 		{
-			file_put_contents(dirname(__FILE__) . "/last_post.txt", $latest_post_url);
+			file_put_contents(dirname(__FILE__) . "/last_post.txt", $latest_post_timestamp);
 			if ($debug)
 				print "Posted OK.\n";
 		}
