@@ -74,7 +74,7 @@
 	
 	// Ok, fun part's over. Now we need to get the timestamp of our last post.
 	if (file_exists(dirname(__FILE__) . "/last_post.txt"))
-		$last_timestamp_posted = intval(trim(file_get_contents(dirname(__FILE__) . "/last_post.txt")));
+		$last_timestamp_posted = number_format(trim(file_get_contents(dirname(__FILE__) . "/last_post.txt")), 0, "", "");
 	else
 		$last_timestamp_posted = 0;
 	
@@ -87,7 +87,7 @@
 	// Loop through the posts until we find a post on or before the timestamp of the last post.
 	foreach($post_ary as $post)
 	{
-		if (intval($post->created) > $last_timestamp_posted)
+		if (number_format($post->created, 0, "", "") > $last_timestamp_posted)
 			$posts_to_post[] = $post;
 		else
 			break;
