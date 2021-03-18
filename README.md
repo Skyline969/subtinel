@@ -19,7 +19,7 @@ After you have your webhook, all you need to configure is the following (located
 * rate_limit/char_limit: The post or character limit for each time the script runs. These are defaulted to the standard values Discord provides in their documentation. Adjust as necessary.
 * reddit_url: The URL of the subreddit to monitor. Make sure you specify /new/!
 * discord_webhook: The URL to the Discord webhook.
-* timezome: Used to calculating when posts were created. Default is UTC, but adjust to your liking, for instance if you have a local server and all posts would be relevant to your local timezone.
+* timezone: Used to calculating when posts were created. Default is UTC, but adjust to your liking, for instance if you have a local server and all posts would be relevant to your local timezone.
 
 ## Installation
 Installation is as simple as installing the dependencies, configuring the script, and then running it. The script could be run via a cron job to automatically retrieve new information.
